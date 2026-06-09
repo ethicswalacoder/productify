@@ -7,7 +7,11 @@ export const users = pgTable("users", {
   name: text("name"),
   imageUrl: text("image_url"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  // updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date" })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const products = pgTable("produsts", {
@@ -22,19 +26,17 @@ export const products = pgTable("produsts", {
   updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
 });
 
-export const comments = pgTable("comments",{
+export const comments = pgTable("comments", {
   id: uuid("id").defaultRandom().primaryKey(),
   content: text("content").notNull(),
-   userId: text("user_id")
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-   productId: text("product_id")
+  productId: text("product_id")
     .notNull()
     .references(() => products.id, { onDelete: "cascade" }),
-     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
-
 
 //RELATIONS
 
@@ -44,29 +46,31 @@ export const comments = pgTable("comments",{
 //Users Relations: A user can have many products and many comments
 //`many()` means one user can have multiple related records
 
-export const usersRelations = relations(users, ({many}) =>({
-    products: many(products), //One user -> many products
-    comments: many(comments), //One user -> many comments
+export const usersRelations = relations(users, ({ many }) => ({
+  products: many(products), //One user -> many products
+  comments: many(comments), //One user -> many comments
 }));
 
 //Products Relations: a product belongs to one user and can have many comments
 //`one()` means a single related record, `many()` means multiple related records
 
-export const productsRelations = relations(products, ({one, many}) => ({
-    comments: many(comments),
-    //`fields` = the foreign key column in THIS table (products.userId)
-    //`references` = the primary key column in the RELATED table (users.id)
-    user: one(users, {fields: [products.userId], references: [users.id]}), //one product -> one user
+export const productsRelations = relations(products, ({ one, many }) => ({
+  comments: many(comments),
+  //`fields` = the foreign key column in THIS table (products.userId)
+  //`references` = the primary key column in the RELATED table (users.id)
+  user: one(users, { fields: [products.userId], references: [users.id] }), //one product -> one user
 }));
 
 //Comments Relations: A comment belongs to one user and one product
-export const commentsRelations = relations(comments, ({one}) => ({
-// Comment's userId foreign key references user.id primary key
-user: one(users, {fields: [comments.userId], references:[users.id]}), //One comment -> one user
-//Comment's procductId foreign key refrences products.id primary key
-product: one(products, {fields: [comments.productId], references: [products.id]}), //One comment -> one product
+export const commentsRelations = relations(comments, ({ one }) => ({
+  // Comment's userId foreign key references user.id primary key
+  user: one(users, { fields: [comments.userId], references: [users.id] }), //One comment -> one user
+  //Comment's procductId foreign key refrences products.id primary key
+  product: one(products, {
+    fields: [comments.productId],
+    references: [products.id],
+  }), //One comment -> one product
 }));
-
 
 //Type Inference
 
